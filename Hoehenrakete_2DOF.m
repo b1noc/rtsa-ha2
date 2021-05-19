@@ -50,7 +50,6 @@ tc_1 = Itot_1 / F_1;
 tc_2 = Itot_2 / F_2;
 
 
-
 %% Simulation
 %% Unterstufe
 
@@ -59,7 +58,7 @@ tspan = [1 tc_1];
 y0 = [0 r0 m0 gamma0 0];
 
 [T,Y] = ode15s(@(t,y) Rocket_2DOF(t,y,c), tspan, y0);
-%{
+
 % Calculate accelerations as derivatives from velocities
     deltav=diff(Y(:,1));
     deltat=diff(T);
@@ -93,21 +92,21 @@ figure (5)
 plot (T,Y(:,4)*180/pi)
 ylabel ('gamma [°]')
 xlabel ('Time [s]')
-%}
 
 
 %% Oberstufe
 
 v1 = Y(end,1)
 r1 = Y(end,2)
+m1 = Y(end,3)
 gamma1 = Y(end,4)
 angle1 = Y(end,5)
 
+%{
 c = [cw_2 ca_2 A_2 K mp_2, F_2 tc_2 r0];
 tspan = [0 101];
 y0 = [v1 r1 (m0 - mn_1) gamma1 angle1];
 
-%{
 [T,Y] = ode15s(@(t,y) Rocket_2DOF(t,y,c), tspan, y0);
 
 % Calculate accelerations as derivatives from velocities

@@ -27,6 +27,10 @@ end
 [T,a,P,rho]=atmosisa(y(2)-r0);
 % Set Matrix of results to zero
 dy=zeros(5,1);
+
+% Calculate derivative of mass   
+dy(3)=-mp;
+
 % Calculate derivatives of velocity, radius and ground angle for alitudes
 % above ground
 if y(2)>=r0
@@ -38,14 +42,13 @@ else
     dy(2)=0;
     dy(5)=0;
 end
-% Calculate derivative of mass   
-dy(3)=-mp;
 % Calculate derivative of flight path angles for altitudes above ramp
 % length
-if (y(2)-r0)<=0.1
-    dy(4)=0;  
-else
+%if y(2)>=(r0+0.1)
+if y(1) > 0
     dy(4)=(F*sin(alpha)+rho*ca*A/2*y(1)*y(1))/y(3)/y(1)-(K/y(2)/y(2)/y(1)-y(1)/y(2))*cos(y(4));
+else
+    dy(4)=0;  
 end
 
 
