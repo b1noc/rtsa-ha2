@@ -15,8 +15,8 @@ m8_2 = 4.1619e+04; % [kg]
 C_1 = 2.9518e+03; % [kg]
 C_2 = 4.5111e+03; % [kg]
 
-a_1 = 12.5; % [m/s]
-a_2 = 10; % [m/s]
+a_1 = 12.5; % [m/s^2]
+a_2 = 10; % [m/s^2]
 
 cw_1 = 0.4;
 cw_2 = 0.4;
@@ -49,12 +49,17 @@ mp_2 =  F_2/C_2;
 tc_1 = Itot_1 / F_1;
 tc_2 = Itot_2 / F_2;
 
+gammarate = - (90 * pi/180)/(tc_1 + tc_2);
+
+g_1 = gammarate * 0.6;
+g_2 = gammarate - g_1;
+
 
 %% Simulation
 %% Unterstufe
 
-c = [cw_1 ca_1 A_1 K mp_1, F_1 tc_1 r0];
-tspan = [1 tc_1];
+c = [cw_1 ca_1 A_1 K mp_1 F_1 tc_1 r0 g_1];
+tspan = [0:1:tc_1];
 y0 = [0 r0 m0 gamma0 0];
 
 [T,Y] = ode15s(@(t,y) Rocket_2DOF(t,y,c), tspan, y0);
@@ -71,24 +76,29 @@ y0 = [0 r0 m0 gamma0 0];
         la=length(acc);
         acc(lt+1:la)=[];
     end
+% Calculate alpha ad derivative from ...
+
+ %alpha = asin(gammarate + (K/(y(2)^2 * y(1)) - y(1)/y(2)) * cos(y(4)) - ((rho*ca*A/2*y(1)*y(1))/y(2)/y(1))) * y(2) * y(1) / F;
+
 % plot results   
 figure (1)
+subplot(2,5,1)
 plot (T,acc,'b-')
 ylabel ('Acceleration [m/s^2]')
 xlabel ('Time [s]')
-figure (2)
+subplot(2,5,2)
 plot (T,Y(:,1),'r-')
 ylabel ('Velocity [m/s]')
 xlabel ('Time [s]')
-figure (3)
+subplot(2,5,3)
 plot (T,Y(:,2)-r0,'b-')
 ylabel ('Altitude [m]')
 xlabel ('Time [s]')
-figure (4)
+subplot(2,5,4)
 plot (T,Y(:,3))
 ylabel ('Mass [kg]')
 xlabel ('Time [s]')
-figure (5)
+subplot(2,5,5)
 plot (T,Y(:,4)*180/pi)
 ylabel ('gamma [°]')
 xlabel ('Time [s]')
@@ -96,18 +106,20 @@ xlabel ('Time [s]')
 
 %% Oberstufe
 
-v1 = Y(end,1)
-r1 = Y(end,2)
-m1 = Y(end,3)
-gamma1 = Y(end,4)
-angle1 = Y(end,5)
+v1 = Y(end,1);
+r1 = Y(end,2);
+m1 = Y(end,3);
+gamma1 = Y(end,4);
+angle1 = Y(end,5);
 
-%{
-c = [cw_2 ca_2 A_2 K mp_2, F_2 tc_2 r0];
-tspan = [0 101];
-y0 = [v1 r1 (m0 - mn_1) gamma1 angle1];
+% TODO: Zwischenflugphase Stufentrennung
 
-[T,Y] = ode15s(@(t,y) Rocket_2DOF(t,y,c), tspan, y0);
+c = [cw_2 ca_2 A_2 K mp_2 F_2 tc_2 r0 g_2];
+tspan = [0:1:tc_2];
+
+y1 = [v1 r1 (m0-mn_1) gamma1 angle1];
+
+[T,Y] = ode15s(@(t,y) Rocket_2DOF(t,y,c), tspan, y1);
 
 % Calculate accelerations as derivatives from velocities
     deltav=diff(Y(:,1));
@@ -121,25 +133,25 @@ y0 = [v1 r1 (m0 - mn_1) gamma1 angle1];
         la=length(acc);
         acc(lt+1:la)=[];
     end
-% plot results   
-figure (1)
+% plot results  
+subplot(2,5,6)
 plot (T,acc,'b-')
 ylabel ('Acceleration [m/s^2]')
 xlabel ('Time [s]')
-figure (2)
+subplot(2,5,7)
 plot (T,Y(:,1),'r-')
 ylabel ('Velocity [m/s]')
 xlabel ('Time [s]')
-figure (3)
+subplot(2,5,8)
 plot (T,Y(:,2)-r0,'b-')
 ylabel ('Altitude [m]')
 xlabel ('Time [s]')
-figure (4)
+subplot(2,5,9)
 plot (T,Y(:,3))
 ylabel ('Mass [kg]')
 xlabel ('Time [s]')
-figure (5)
+subplot(2,5,10)
 plot (T,Y(:,4)*180/pi)
 ylabel ('gamma [°]')
 xlabel ('Time [s]')
-%}
+
