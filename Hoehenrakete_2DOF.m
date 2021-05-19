@@ -2,6 +2,8 @@ clear all
 close all
 clc
 
+global alphaHist
+
 %% Rocket definition
 m0 = 1.7819e+05; % [kg]
 
@@ -59,7 +61,7 @@ g_2 = gammarate - g_1;
 %% Unterstufe
 
 c = [cw_1 ca_1 A_1 K mp_1 F_1 tc_1 r0 g_1];
-tspan = [0:1:tc_1];
+tspan = 0:1:tc_1;
 y0 = [0 r0 m0 gamma0 0];
 
 [T,Y] = ode15s(@(t,y) Rocket_2DOF(t,y,c), tspan, y0);
@@ -146,12 +148,13 @@ subplot(2,5,8)
 plot (T,Y(:,2)-r0,'b-')
 ylabel ('Altitude [m]')
 xlabel ('Time [s]')
-subplot(2,5,9)
-plot (T,Y(:,3))
-ylabel ('Mass [kg]')
-xlabel ('Time [s]')
+%subplot(2,5,9)
+%plot (T,Y(:,3))
+%ylabel ('Mass [kg]')
+%xlabel ('Time [s]')
 subplot(2,5,10)
 plot (T,Y(:,4)*180/pi)
 ylabel ('gamma [°]')
 xlabel ('Time [s]')
+
 
