@@ -64,28 +64,30 @@ c = [cw_1 ca_1 A_1 K mp_1 F_1 tc_1 r0 g_1];
 tspan = 0:1:tc_1;
 y0 = [0 r0 m0 gamma0 0];
 
-[T_1,Y_1] = ode15s(@(t,y) Rocket_2DOF(t,y,c), tspan, y0);
+[T1,Y1] = ode15s(@(t,y) Rocket_2DOF(t,y,c), tspan, y0);
 
-v1 = Y_1(end,1);
-r1 = Y_1(end,2);
-m1 = Y_1(end,3);
-gamma1 = Y_1(end,4);
-angle1 = Y_1(end,5);
+v1 = Y1(end,1);
+r1 = Y1(end,2);
+m1 = Y1(end,3);
+gamma1 = Y1(end,4);
+angle1 = Y1(end,5);
 
 %% TODO: Zwischenflugphase Stufentrennung
 t_sep = 6; % [s]
 
-c = [cw_1 ca_1 A_1 K 0 0 t_sep r0 g_1];
+c = [cw_1 ca_1 A_1 K 0 0 0 r0 g_1];
 tspan = 0:1:t_sep;
-y0 = [v1 r1 m0-m8_1 gamma1 angle1];
+y0 = [v1 r1 m0-mn_1 gamma1 angle1];
 
-[T_s,Y_s] = ode15s(@(t,y) Rocket_2DOF(t,y,c), tspan, y0);
+[Ts,Ys] = ode15s(@(t,y) Rocket_2DOF(t,y,c), tspan, y0);
 
-vs = Y_s(end,1);
-rs = Y_s(end,2);
-ms = Y_s(end,3);
-gammas = Y_s(end,4);
-angles = Y_s(end,5);
+vs = Ys(end,1);
+rs = Ys(end,2);
+ms = Ys(end,3);
+gammas = Ys(end,4);
+angles = Ys(end,5);
+
+
 
 %% Oberstufe
 
@@ -93,12 +95,13 @@ c = [cw_2 ca_2 A_2 K mp_2 F_2 tc_2 r0 g_2];
 tspan = [0:1:tc_2];
 y1 = [vs rs m0-mn_1 gammas angles];
 
-[T_2,Y_2] = ode15s(@(t,y) Rocket_2DOF(t,y,c), tspan, y1);
+[T2,Y2] = ode15s(@(t,y) Rocket_2DOF(t,y,c), tspan, y1);
 
 
 %% Combine Sim-Data
-T = [T_1; T_s+length(T_1); T_2+length(T_1)+length(T_2)];
-Y = [Y_1; Y_s; Y_2];
+
+T = [T1; Ts+length(T1); T2+length(T1)+length(Ts)];
+Y = [Y1; Ys; Y2];
 
 %% Plot results
 % Calculate accelerations as derivatives from velocities
@@ -119,36 +122,36 @@ subplot(5,1,1)
 plot(T,acc,'b-')
 ylabel ('Acceleration [m/s^2]')
 xlabel ('Time [s]')
-xline(length(T_1)-1, '-black', {'Stage seperation'})
-xline(length(T_1)-1+length(T_s)-1, '-r', {'Upper stage ignition'})
+xline(length(T1)-1, '-black', {'Stage seperation'});
+xline(length(T1)-1+length(Ts)-1, '-r', {'Upper stage ignition'});
 
 subplot(5,1,2)
 plot (T,Y(:,1),'r-')
 ylabel ('Velocity [m/s]')
 xlabel ('Time [s]')
-xline(length(T_1)-1, '-black', {'Stage seperation'})
-xline(length(T_1)-1+length(T_s)-1, '-r', {'Upper stage ignition'})
+xline(length(T1)-1, '-black', {'Stage seperation'});
+xline(length(T1)-1+length(Ts)-1, '-r', {'Upper stage ignition'});
 
 subplot(5,1,3)
 plot (T,Y(:,2)-r0,'b-')
 ylabel ('Altitude [m]')
 xlabel ('Time [s]')
-xline(length(T_1)-1, '-black', {'Stage seperation'})
-xline(length(T_1)-1+length(T_s)-1, '-r', {'Upper stage ignition'})
+xline(length(T1)-1, '-black', {'Stage seperation'});
+xline(length(T1)-1+length(Ts)-1, '-r', {'Upper stage ignition'});
 
 subplot(5,1,4)
 plot (T,Y(:,4)*180/pi)
 ylabel ('gamma [°]')
 xlabel ('Time [s]')
-xline(length(T_1)-1, '-black', {'Stage seperation'})
-xline(length(T_1)-1+length(T_s)-1, '-r', {'Upper stage ignition'})
+xline(length(T1)-1, '-black', {'Stage seperation'});
+xline(length(T1)-1+length(Ts)-1, '-r', {'Upper stage ignition'});
 
 subplot(5,1,5)
 plot (T,Y(:,3))
 ylabel ('Mass [kg]')
 xlabel ('Time [s]')
-xline(length(T_1)-1, '-black', {'Stage seperation'})
-xline(length(T_1)-1+length(T_s)-1, '-r', {'Upper stage ignition'})
+xline(length(T1)-1, '-black', {'Stage seperation'});
+xline(length(T1)-1+length(Ts)-1, '-r', {'Upper stage ignition'});
 
 
 
