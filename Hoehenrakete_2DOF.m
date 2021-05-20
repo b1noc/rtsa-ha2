@@ -2,7 +2,7 @@ clear all
 close all
 clc
 
-global alphaHist
+
 
 %% Rocket definition
 m0 = 1.7819e+05; % [kg]
@@ -64,55 +64,18 @@ c = [cw_1 ca_1 A_1 K mp_1 F_1 tc_1 r0 g_1];
 tspan = 0:1:tc_1;
 y0 = [0 r0 m0 gamma0 0];
 
-[T,Y] = ode15s(@(t,y) Rocket_2DOF(t,y,c), tspan, y0);
+[T_1,Y_1] = ode15s(@(t,y) Rocket_2DOF(t,y,c), tspan, y0);
 
-% Calculate accelerations as derivatives from velocities
-    deltav=diff(Y(:,1));
-    deltat=diff(T);
-    lt=length(T);
-    for j=1 : lt-1
-        acc(j)=deltav(j)/deltat(j);
-    end
-    acc(lt)=acc(lt-1);
-    if length (acc) > lt
-        la=length(acc);
-        acc(lt+1:la)=[];
-    end
-% Calculate alpha ad derivative from ...
 
- %alpha = asin(gammarate + (K/(y(2)^2 * y(1)) - y(1)/y(2)) * cos(y(4)) - ((rho*ca*A/2*y(1)*y(1))/y(2)/y(1))) * y(2) * y(1) / F;
-
-% plot results   
-figure (1)
-subplot(2,5,1)
-plot (T,acc,'b-')
-ylabel ('Acceleration [m/s^2]')
-xlabel ('Time [s]')
-subplot(2,5,2)
-plot (T,Y(:,1),'r-')
-ylabel ('Velocity [m/s]')
-xlabel ('Time [s]')
-subplot(2,5,3)
-plot (T,Y(:,2)-r0,'b-')
-ylabel ('Altitude [m]')
-xlabel ('Time [s]')
-subplot(2,5,4)
-plot (T,Y(:,3))
-ylabel ('Mass [kg]')
-xlabel ('Time [s]')
-subplot(2,5,5)
-plot (T,Y(:,4)*180/pi)
-ylabel ('gamma [°]')
-xlabel ('Time [s]')
 
 
 %% Oberstufe
 
-v1 = Y(end,1);
-r1 = Y(end,2);
-m1 = Y(end,3);
-gamma1 = Y(end,4);
-angle1 = Y(end,5);
+v1 = Y_1(end,1);
+r1 = Y_1(end,2);
+m1 = Y_1(end,3);
+gamma1 = Y_1(end,4);
+angle1 = Y_1(end,5);
 
 % TODO: Zwischenflugphase Stufentrennung
 
@@ -121,7 +84,12 @@ tspan = [0:1:tc_2];
 
 y1 = [v1 r1 (m0-mn_1) gamma1 angle1];
 
-[T,Y] = ode15s(@(t,y) Rocket_2DOF(t,y,c), tspan, y1);
+[T_2,Y_2] = ode15s(@(t,y) Rocket_2DOF(t,y,c), tspan, y1);
+
+T = [T_1; T_2+length(T_1)];
+Y = [Y_1; Y_2];
+
+
 
 % Calculate accelerations as derivatives from velocities
     deltav=diff(Y(:,1));
@@ -136,25 +104,37 @@ y1 = [v1 r1 (m0-mn_1) gamma1 angle1];
         acc(lt+1:la)=[];
     end
 % plot results  
-subplot(2,5,6)
-plot (T,acc,'b-')
+
+subplot(5,1,1)
+plot(T,acc,'b-')
 ylabel ('Acceleration [m/s^2]')
 xlabel ('Time [s]')
-subplot(2,5,7)
+xline(length(T_1)-1, '-r', {'Stage Seperation'})
+
+subplot(5,1,2)
 plot (T,Y(:,1),'r-')
 ylabel ('Velocity [m/s]')
 xlabel ('Time [s]')
-subplot(2,5,8)
+xline(length(T_1)-1, '-black', {'Stage Seperation'})
+
+subplot(5,1,3)
 plot (T,Y(:,2)-r0,'b-')
 ylabel ('Altitude [m]')
 xlabel ('Time [s]')
-%subplot(2,5,9)
-%plot (T,Y(:,3))
-%ylabel ('Mass [kg]')
-%xlabel ('Time [s]')
-subplot(2,5,10)
+xline(length(T_1)-1, '-black', {'Stage Seperation'})
+
+subplot(5,1,4)
 plot (T,Y(:,4)*180/pi)
 ylabel ('gamma [°]')
 xlabel ('Time [s]')
+xline(length(T_1)-1, '-black', {'Stage Seperation'})
+
+subplot(5,1,5)
+plot (T,Y(:,3))
+ylabel ('Mass [kg]')
+xlabel ('Time [s]')
+xline(length(T_1)-1, '-black', {'Stage Seperation'})
+
+
 
 
