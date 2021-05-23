@@ -2,17 +2,15 @@ clear all
 close all
 clc
 
-
-
 %% Rocket definition
-m0 = 1.7819e+05; % [kg]
+mn_1 = 250000; % [kg]
+mn_2 = 50000; % [kg]
+m1 = 12000; % [kg]
 
-mn_1 = 1.1772e+05; % [kg]
-mn_2 = 5.0474e+04; % [kg]
-m1 = 10000; % [kg]
+m0 = m1+mn_1+mn_2; % [kg]
 
-m8_1 = 1.0519e+05; % [kg]
-m8_2 = 4.1619e+04; % [kg]
+m8_1 = 0.9*mn_1; % [kg]
+m8_2 = 0.9*mn_2; % [kg]
 
 C_1 = 2.9518e+03; % [kg]
 C_2 = 4.5111e+03; % [kg]
@@ -42,6 +40,9 @@ A_2 = D^2 * pi /4;
 F_1 = m0 * a_1; % [N]
 F_2 = (m0 - mn_1) * a_2; % [N]
 
+dF_1 = 0.08;
+dF_2 = 0;
+
 Itot_1 = m8_1 * C_1;
 Itot_2 = m8_2 * C_2;
 
@@ -51,16 +52,10 @@ mp_2 =  F_2/C_2;
 tc_1 = Itot_1 / F_1;
 tc_2 = Itot_2 / F_2;
 
-gammarate = - (90 * pi/180)/(tc_1 + tc_2);
-
-g_1 = gammarate * 0.6;
-g_2 = gammarate - g_1;
-
-
 %% Simulation
 %% Unterstufe
 
-c = [cw_1 ca_1 A_1 K mp_1 F_1 tc_1 r0 g_1];
+c = [cw_1 ca_1 A_1 K mp_1 F_1 tc_1 r0 dF_1];
 tspan = 0:1:tc_1;
 y0 = [0 r0 m0 gamma0 0];
 
@@ -75,7 +70,7 @@ angle1 = Y1(end,5);
 %% TODO: Zwischenflugphase Stufentrennung
 t_sep = 6; % [s]
 
-c = [cw_1 ca_1 A_1 K 0 0 0 r0 g_1];
+c = [cw_1 ca_1 A_1 K 0 0 0 r0 0];
 tspan = 0:1:t_sep;
 y0 = [v1 r1 m0-mn_1 gamma1 angle1];
 
@@ -91,7 +86,7 @@ angles = Ys(end,5);
 
 %% Oberstufe
 
-c = [cw_2 ca_2 A_2 K mp_2 F_2 tc_2 r0 g_2];
+c = [cw_2 ca_2 A_2 K mp_2 F_2 tc_2 r0 dF_2];
 tspan = [0:1:tc_2];
 y1 = [vs rs m0-mn_1 gammas angles];
 
