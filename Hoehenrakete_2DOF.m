@@ -1,11 +1,10 @@
-clear all
-close all
 clc
+clear Rocket_2DOF
 
 %% Rocket definition
-mn_1 = 250000; % [kg]
-mn_2 = 50000; % [kg]
-m1 = 12000; % [kg]
+%mn_1 = 250000; % [kg]
+%mn_2 = 40000; % [kg]
+m1 = 16000; % [kg]
 
 m0 = m1+mn_1+mn_2; % [kg]
 
@@ -55,7 +54,7 @@ tc_2 = Itot_2 / F_2;
 %% Simulation
 %% Unterstufe
 
-c = [cw_1 ca_1 A_1 K mp_1 F_1 tc_1 r0 dF_1];
+c = [cw_1 ca_1 A_1 K mp_1 F_1 tc_1 r0 dF_1 m0-m8_1];
 tspan = 0:1:tc_1;
 y0 = [0 r0 m0 gamma0 0];
 
@@ -67,10 +66,10 @@ m1 = Y1(end,3);
 gamma1 = Y1(end,4);
 angle1 = Y1(end,5);
 
-%% TODO: Zwischenflugphase Stufentrennung
+%%  Zwischenflugphase Stufentrennung
 t_sep = 6; % [s]
 
-c = [cw_1 ca_1 A_1 K 0 0 0 r0 0];
+c = [cw_1 ca_1 A_1 K 0 0 0 r0 0 m1+mn_2];
 tspan = 0:1:t_sep;
 y0 = [v1 r1 m0-mn_1 gamma1 angle1];
 
@@ -86,8 +85,9 @@ angles = Ys(end,5);
 
 %% Oberstufe
 
-c = [cw_2 ca_2 A_2 K mp_2 F_2 tc_2 r0 dF_2];
+c = [cw_2 ca_2 A_2 K mp_2 F_2 tc_2 r0 dF_2 m0-mn_1-m8_2];
 tspan = [0:1:tc_2];
+
 y1 = [vs rs m0-mn_1 gammas angles];
 
 [T2,Y2] = ode15s(@(t,y) Rocket_2DOF(t,y,c), tspan, y1);
@@ -126,6 +126,7 @@ ylabel ('Velocity [m/s]')
 xlabel ('Time [s]')
 xline(length(T1)-1, '-black', {'Stage seperation'});
 xline(length(T1)-1+length(Ts)-1, '-r', {'Upper stage ignition'});
+xline(length(T1)-1+length(Ts)-1+length(T2)-1, '-r', {'Upper stage burnout'});
 
 subplot(5,1,3)
 plot (T,Y(:,2)-r0,'b-')
@@ -133,6 +134,7 @@ ylabel ('Altitude [m]')
 xlabel ('Time [s]')
 xline(length(T1)-1, '-black', {'Stage seperation'});
 xline(length(T1)-1+length(Ts)-1, '-r', {'Upper stage ignition'});
+xline(length(T1)-1+length(Ts)-1+length(T2)-1, '-r', {'Upper stage burnout'});
 
 subplot(5,1,4)
 plot (T,Y(:,4)*180/pi)
