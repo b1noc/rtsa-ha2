@@ -23,20 +23,29 @@ else
     rho = 0;
 end
 
+
+F = F_0 + dF * ((101325 - P)/101325) * F_0;
 % Thrust switched on as long as burning time of engine
-% TODO: Schub über massestrom und gewicht berechnen und dichte
-if t>tc
-    F=0;
-    mp=0;
-else
-    F = F_0 + dF * ((101325 - P)/101325) * F_0;
-end
+
+
 
 % Set Matrix of results to zero
 dy=zeros(5,1);
 
+% Gravity turn
 if (y(2) - r0) > 1000 && (y(2) - r0) < 1500
     alpha = - deg2rad(4);
+end
+
+% target orbit trajectory
+if (y(2)  - r0) > 80000)
+    dh = 200000 - y(2) - r0;
+    gamma_opt = - acos(dh/y(1)/tc) +  deg2rad(90);
+    alpha = asin( (K/(y(2)^2 * y(1)) - y(1)/y(2)) * cos(gamma_opt) - ((rho*ca*A/2*y(1)*y(1))/y(2)/y(1))) * y(2) * y(1) / F;
+end
+
+%{
+    
 elseif (y(2) - r0) > 20000 && (y(2) - r0) < 30000
     alpha = deg2rad(0);
 elseif (y(2) - r0) > 30000 && (y(2) - r0) < 40000
@@ -54,6 +63,7 @@ elseif (y(2) - r0) > 150000
 else
     alpha = 0;
 end
+%}
 
 % if y(2) > (180000 + r0) 
 %      alpha = asin( (K/(y(2)^2 * y(1)) - y(1)/y(2)) * cos(y(4)) - ((rho*ca*A/2*y(1)*y(1))/y(2)/y(1))) * y(2) * y(1) / F;
@@ -62,6 +72,16 @@ end
 %if y(2) > (150000 + r0) && y(4) > 0
 %     alpha = asin(gammarate + (K/(y(2)^2 * y(1)) - y(1)/y(2)) * cos(y(4)) - ((rho*ca*A/2*y(1)*y(1))/y(2)/y(1))) * y(2) * y(1) / F;
 %end
+
+
+
+if t>tc
+    F=0;
+    mp=0;
+    alpha=0;
+end
+
+
     
 % Calculate derivatives of velocity, radius and ground angle for alitudes
 % above ground
