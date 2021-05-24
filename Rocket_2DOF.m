@@ -1,27 +1,26 @@
 function dy = Rocket_2DOF(t,y,c)
 
-%global cw ca A K mpunkt_quer F_quer tc alpha lrampe r0
-persistent t_grav
+global alp gas
+
+r0=6371000;
 
 cw = c(1);
-ca = c(2);
-A = c(3);
-K = c(4);
-mp = c(5);
-F_0 = c(6);
-tc = c(7);
-r0 = c(8);
-dF = c(9);
-mleer = c(10);
+A = c(2);
+K = c(3);
+mp = c(4);
+F0 = c(5);
+tc = c(6);
+alpha = c(8);
 
-alpha = 0;
 
-%TODO: alpha max as property c(10) = 5
-alpha_max = 30; % degree
-gamma_grav = 85; % degree
-alpha_grav = 5;
 
-% Atmospheric data at r from ISA atmosphere model (Aerospace Toolbox) 
+
+F = F0;
+gimbal_max = 50;
+
+
+
+%% Atmospheric data at r from ISA atmosphere model (Aerospace Toolbox) 
 
 if (y(2) - r0) < 84000 && (y(2) - r0) > 0
     [T,a,P,rho]=atmoscoesa(y(2)-r0);
@@ -30,58 +29,57 @@ else
     rho = 0;
 end
 
+%% Berechnung der variablen (nicht integrierte Variablen)
 
-%F = F_0 + dF * ((101325 - P)/101325) * F_0;
-% Thrust switched on as long as burning time of engine
-F = F_0;
+%TODO
+Fs = F0;
+g = K / y(2)^2;
+Fw = 0.5 * rho * y(1)^2 * A * cw;
+
+
+
+tct = 494.2420;
+v_vert_soll = (200000 - (y(2)-r0))/(tct-t);
+
+v_vert = y(1) * sin(y(4));
+
+dv_vert = (v_vert_soll-v_vert);
+gamma_soll = asin(dv_vert/y(1));
+
+if isreal(gamma_soll)
+    rate = (y(4) - gamma_soll);
+else
+    gamma_soll = 0;
+end
+    
+
+
+
+
+
+%% Bahnberechnung
+
+if alpha == 99
+    alpha = 0;
+   
+    if gamma_soll ~0;
+        midterm = (K/y(2)^2/y(1) - y(1)/y(2)) ;
+        alpha  = - asind((rate + midterm * cos(y(4))) * y(3)* y(1) / Fs);
+    end
+
+end
+
+
 
 
 % Set Matrix of results to zero
 dy=zeros(5,1);
 
-
-
-% Gravity turn
-if (y(2) - r0) > 100  && (y(2) - r0) < 300
-    alpha = -.1;
-end
-    
-    
-    %&& isempty(t_grav) 
-%     turnRate = sind(alpha_grav) * F / (y(3) * y(1)) - (K/(y(2)^2 * y(1))- y(1)/y(2)) * cos(y(4))
-%     %dturn = deg2rad(90-gamma_grav)/turnRate
-%     alpha = asin(turnRate + (K/(y(2)^2 * y(1))- y(1)/y(2)) * cos(y(4)) * y(2) * y(1) / F)
-% end
-
-
-
-% if ~isempty(t_grav)  && t_grav(1) < ts && ts < t_grav(2) && (y(2) - r0) < 3000
-%   
-%     alpha = (alpha_grav);
-% end
-
-% target orbit trajectory
-%TODO: 80 000
-
-
-
-timeToBurnout = (y(3)-mleer) / mp;
-dh = 200000 - (y(2)-r0);
-v_vert_traj = dh/ (timeToBurnout);
-
-v_vert_traj/y(1);
-if (y(2)  - r0) > 80000 && v_vert_traj > 0
-    gamma_traj = asind(v_vert_traj/y(1)) ;
-    dGamma = rad2deg(y(4)) - gamma_traj;
-    alpha = - dGamma ;
-%     
-% elseif (y(2)  - r0) > 200000 && v_vert_traj < 0 && tc > 200
-%     gamma_traj = asind(v_vert_traj/y(1)) 
-%     dGamma = rad2deg(y(4)) - gamma_traj
-%     alpha = dGamma ;
-end
-
-
+% 1 Velocity
+% 2 Radius
+% 3 Mass
+% 4 Gamma
+% 5 Erdwinkel
 
 if t>tc
     F=0;
@@ -89,37 +87,33 @@ if t>tc
     alpha=0;
 end
 
-if alpha > alpha_max 
-   alpha = alpha_max;
-elseif alpha < - alpha_max
-    alpha = - alpha_max;
+if alpha > gimbal_max
+    alpha = gimbal_max;
+elseif alpha < - gimbal_max
+    alpha = -gimbal_max;
 end
 
-    
-% Calculate derivatives of velocity, radius and ground angle for alitudes
-% above ground
-if y(2)>=r0
-    dy(1)=(F*cosd(alpha)-rho*cw*A/2*y(1)*y(1))/y(3)-K/y(2)/y(2)*sin(y(4));
-    dy(2)=y(1)*sin(y(4));
-    dy(5)=y(1)/y(2)*cos(y(4));
+if y(2) >= r0 
+    dy(1) = (Fs * cosd(alpha) - Fw)/y(3) - g * sin(y(4));
+    dy(2) = y(1) * sin(y(4));
+    dy(5) = y(1)/y(2)*cos(y(4));
 else
-    dy(1)=0;
-    dy(2)=0;
-    dy(5)=0;
+    dy(1) = 0;
+    dy(2) = 0;
+    dy(5) = 0;
+ 
 end
-% Calculate derivative of flight path angles for altitudes above ramp
-% length
 
-% Calculate derivative of mass   
-dy(3)=-mp;
-
-
-
-if y(2)>=(r0+0.1)
-    dy(4)=F*sind(alpha)/y(3)/y(1) - (K/y(2)^2/y(1) - y(1)/y(2) )*cos(y(4));
+if (y(2)-r0) > 0.1
+   dy(4) = (Fs * sind(alpha)) / (y(3) * y(1)) - (g / y(1) - y(1)/y(2)) * cos(y(4));
 else
-    dy(4)=0;  
+    dy(4) = 0;
 end
+
+dy(3) = -mp;
     
 
+
+alp(end+1,:) = [t alpha];
+gas(end+1,:) = [t rad2deg(gamma_soll)];
 
