@@ -1,7 +1,8 @@
 clc
 clear Rocket_2DOF
+clear global
 clear all
-
+global als gas;
 %% Rocket definition
 mn_1 = 250000; % [kg]
 mn_2 = 40000; % [kg]
@@ -48,24 +49,30 @@ Itot_2 = m8_2 * C_2;
 mp_1 =  F_1/C_1;
 mp_2 =  F_2/C_2;
 
-tc_1 = Itot_1 / F_1;
-tc_2 = Itot_2 / F_2;
+tc_1 = Itot_1 / F_1
+tc_2 = Itot_2 / F_2
 
 %% Bahnparameter
 
 
 
-dt_grav = 3;
-t_grav = 24;
-alpha_grav = 3.9;
+dt_grav = .5;
+t_grav = 5;
+alpha_grav = .025;
+
+t_unten = [];
+alpha1 = [0];
 
 t_oben = [300];
 alpha2 = [0 99];
 
+t_sep = 6;
 
+
+tct = tc_1 + t_sep + tc_2;
 %% Unterstufe
-tm = [0 t_grav t_grav+dt_grav tc_1];
-alpha = [0 -alpha_grav 0];
+tm = [0; t_grav; t_grav+dt_grav; t_unten; tc_1];
+alpha1 = [0; -alpha_grav; 0; alpha1];
 
 vi = 0;
 ri = r0;
@@ -78,8 +85,8 @@ Y1 = [];
 
 mode = 0;
 
-for i = 1:3
-    c = [cw_1 A_1 K mp_1 F_1 tc_1 r0 alpha(i)];
+for i = 1:length(tm)-1
+    c = [cw_1 A_1 K mp_1 F_1 tc_1 r0 alpha1(i) tct];
     tspan = [tm(i) tm(i+1)];
     y0 = [vi ri mi gi ai];
     
@@ -105,9 +112,9 @@ end
 
  
 %%  Zwischenflugphase Stufentrennung
-t_sep = 6; % [s]
+ % [s]
 
-c = [cw_1 A_1 K 0 0 tc_1+t_sep r0 0];
+c = [cw_1 A_1 K 0 0 tc_1+t_sep r0 0 tct];
 tspan = [t1 t1+t_sep];
 y0 = [v1 r1 m0-mn_1 gamma1 angle1];
 
@@ -138,7 +145,7 @@ T2 = [];
 Y2 = [];
 
 for i = 1:length(tm2)-1
-    c = [cw_2 A_2 K mp_2 F_2 ts+tc_2 r0 alpha2(i)];
+    c = [cw_2 A_2 K mp_2 F_2 ts+tc_2 r0 alpha2(i) tct];
     tspan = [tm2(i) tm2(i+1)];
     y0 = [vi ri mi gi ai];
     
@@ -210,12 +217,12 @@ xlabel ('Time [s]')
 xline(tc_1, '-black', {'Stage seperation'});
 xline(tc_1+t_sep, '-r', {'Upper stage ignition'});
 
-% subplot(6,1,5)
-% plot (T,Y(:,3))
-% ylabel ('Mass [kg]')
-% xlabel ('Time [s]')
-% xline(tc_1, '-black', {'Stage seperation'});
-% xline(tc_1+t_sep, '-r', {'Upper stage ignition'});
+subplot(6,1,5)
+plot (T,Y(:,3))
+ylabel ('Mass [kg]')
+xlabel ('Time [s]')
+xline(tc_1, '-black', {'Stage seperation'});
+xline(tc_1+t_sep, '-r', {'Upper stage ignition'});
 
 umfang_E = r0 * 2 * pi;
 groundtrack = (umfang_E * rad2deg(Y(:,5)))/360 * 10^-3;
@@ -228,32 +235,13 @@ xline(tc_1, '-black', {'Stage seperation'});
 xline(tc_1+t_sep, '-r', {'Upper stage ignition'});
 
 
-% deltav=diff(Y(:,1));
-% deltar=diff(Y(:,2));
-% deltam=diff(Y(:,3));
-% deltag=diff(Y(:,4));
-% deltat=diff(T);
-% lt=length(T);
-% for j=1 : lt-1
-%     [~,~,~,rho]=atmosisa(deltar(j)-r0);
-%     Fw = 0.5 * rho * deltav(j)^2 * A_1 * cw_1;
-%     g = K / deltar(j)^2;
-%     alpha(j)= acosd(((deltat(j) + g * sin(deltag(j)))*deltam(j) + Fw)/F_1);
-% end
-% 
-% alpha(lt)=alpha(lt-1);
-% 
-% if length (alpha) > lt
-%     la=length(alpha);
-%     alpha(lt+1:la)=[];
-% end
 
-global alp gas;
 
-alp = sortrows(alp,1);
+
+als = sortrows(als,1);
 gas = sortrows(gas,1);
 
-subplot(6,1,6)
+subplot(6,1,5)
 plot(gas(:,1),gas(:,2),'b-');
 ylabel ('gamma_{soll} [°]')
 xlabel ('Time [s]')
@@ -261,7 +249,7 @@ xline(tc_1, '-black', {'Stage seperation'});
 xline(tc_1+t_sep, '-r', {'Upper stage ignition'});
 
 subplot(6,1,6)
-plot(alp(:,1),alp(:,2),'b-');
+plot(als(:,1),als(:,2),'b-');
 ylabel ('alpha [°]')
 xlabel ('Time [s]')
 xline(tc_1, '-black', {'Stage seperation'});

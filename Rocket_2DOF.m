@@ -1,8 +1,7 @@
 function dy = Rocket_2DOF(t,y,c)
 
-global alp gas
+global als gas
 
-r0=6371000;
 
 cw = c(1);
 A = c(2);
@@ -10,13 +9,13 @@ K = c(3);
 mp = c(4);
 F0 = c(5);
 tc = c(6);
+r0 = c(7);
 alpha = c(8);
-
-
+tct = c(9);
 
 
 F = F0;
-gimbal_max = 50;
+gimbal_max = 30;
 
 
 
@@ -38,35 +37,42 @@ Fw = 0.5 * rho * y(1)^2 * A * cw;
 
 
 
-tct = 494.2420;
+
 v_vert_soll = (200000 - (y(2)-r0))/(tct-t);
 
 v_vert = y(1) * sin(y(4));
 
 dv_vert = (v_vert_soll-v_vert);
+
 gamma_soll = asin(dv_vert/y(1));
 
+
 if isreal(gamma_soll)
-    rate = (y(4) - gamma_soll);
+    ratep = (y(4) - gamma_soll);
+    ratei = (Fs * sind(0)) / (y(3) * y(1)) - (g / y(1) - y(1)/y(2)) * cos(y(4));
 else
     gamma_soll = 0;
 end
-    
 
 
-
-
+Ki = 0;
+Kp = .07;
 
 %% Bahnberechnung
 
 if alpha == 99
     alpha = 0;
-   
-    if gamma_soll ~0;
-        midterm = (K/y(2)^2/y(1) - y(1)/y(2)) ;
-        alpha  = - asind((rate + midterm * cos(y(4))) * y(3)* y(1) / Fs);
+    if dv_vert > y(1)
+        error = t;
     end
-
+    
+    if gamma_soll ~0;
+        rate = ratep * Kp + ratei * Ki;
+        midterm = (K/y(2)^2/y(1) - y(1)/y(2)) ;
+        alpha  = -asind((rate + midterm * cos(y(4))) * y(3)* y(1) / Fs);
+    end
+else
+    gamma_soll = 0;
 end
 
 
@@ -90,7 +96,7 @@ end
 if alpha > gimbal_max
     alpha = gimbal_max;
 elseif alpha < - gimbal_max
-    alpha = -gimbal_max;
+    alpha = - gimbal_max;
 end
 
 if y(2) >= r0 
@@ -114,6 +120,6 @@ dy(3) = -mp;
     
 
 
-alp(end+1,:) = [t alpha];
+als(end+1,:) = [t alpha];
 gas(end+1,:) = [t rad2deg(gamma_soll)];
 
